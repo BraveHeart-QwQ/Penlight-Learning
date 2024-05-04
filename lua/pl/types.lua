@@ -1,8 +1,6 @@
 ---- Dealing with Detailed Type Information
-
 -- Dependencies `pl.utils`
 -- @module pl.types
-
 local utils = require 'pl.utils'
 local math_ceil = math.ceil
 local assert_arg = utils.assert_arg
@@ -10,7 +8,7 @@ local types = {}
 
 --- is the object either a function or a callable object?.
 -- @param obj Object to check.
-function types.is_callable (obj)
+function types.is_callable(obj)
     return type(obj) == 'function' or getmetatable(obj) and getmetatable(obj).__call and true
 end
 
@@ -33,7 +31,7 @@ local fileMT = getmetatable(io.stdout)
 -- Lua file objects return the type 'file'.
 -- @param obj an object
 -- @return a string like 'number', 'table', 'file' or 'List'
-function types.type (obj)
+function types.type(obj)
     local t = type(obj)
     if t == 'table' or t == 'userdata' then
         local mt = getmetatable(obj)
@@ -43,7 +41,7 @@ function types.type (obj)
             return t
         else
             -- TODO: the "unknown" is weird, it should just return the type
-            return mt._name or "unknown "..t
+            return mt._name or "unknown " .. t
         end
     else
         return t
@@ -54,8 +52,8 @@ end
 -- @param x a number
 -- @raise error if x is not a number
 -- @return boolean
-function types.is_integer (x)
-    return math_ceil(x)==x
+function types.is_integer(x)
+    return math_ceil(x) == x
 end
 
 --- Check if the object is "empty".
@@ -81,8 +79,10 @@ function types.is_empty(o, ignore_spaces)
     end
 end
 
-local function check_meta (val)
-    if type(val) == 'table' then return true end
+local function check_meta(val)
+    if type(val) == 'table' then
+        return true
+    end
     return getmetatable(val)
 end
 
@@ -95,9 +95,11 @@ end
 -- NOTE: since `__len` is 5.2+, on 5.1 is usually returns `false` for userdata
 -- @param val any value.
 -- @return `true` if the object is array-like, otherwise a falsy value.
-function types.is_indexable (val)
+function types.is_indexable(val)
     local mt = check_meta(val)
-    if mt == true then return true end
+    if mt == true then
+        return true
+    end
     return mt and mt.__len and mt.__index and true
 end
 
@@ -110,9 +112,11 @@ end
 -- NOTE: since `__pairs` is 5.2+, on 5.1 is usually returns `false` for userdata
 -- @param val any value.
 -- @return `true` if the object is iterable, otherwise a falsy value.
-function types.is_iterable (val)
+function types.is_iterable(val)
     local mt = check_meta(val)
-    if mt == true then return true end
+    if mt == true then
+        return true
+    end
     return mt and mt.__pairs and true
 end
 
@@ -124,32 +128,49 @@ end
 --
 -- @param val any value.
 -- @return `true` if the object is writeable, otherwise a falsy value.
-function types.is_writeable (val)
+function types.is_writeable(val)
     local mt = check_meta(val)
-    if mt == true then return true end
+    if mt == true then
+        return true
+    end
     return mt and mt.__newindex and true
 end
 
 -- Strings that should evaluate to true.   -- TODO: add on/off ???
-local trues = { yes=true, y=true, ["true"]=true, t=true, ["1"]=true }
+local trues = {
+    yes = true,
+    y = true,
+    ["true"] = true,
+    t = true,
+    ["1"] = true
+}
 -- Conditions types should evaluate to true.
 local true_types = {
-    boolean=function(o, true_strs, check_objs) return o end,
-    string=function(o, true_strs, check_objs)
+    boolean = function(o, true_strs, check_objs)
+        return o
+    end,
+    string = function(o, true_strs, check_objs)
         o = o:lower()
         if trues[o] then
             return true
         end
         -- Check alternative user provided strings.
-        for _,v in ipairs(true_strs or {}) do
+        for _, v in ipairs(true_strs or {}) do
             if type(v) == "string" and o == v:lower() then
                 return true
             end
         end
         return false
     end,
-    number=function(o, true_strs, check_objs) return o ~= 0 end,
-    table=function(o, true_strs, check_objs) if check_objs and next(o) ~= nil then return true end return false end
+    number = function(o, true_strs, check_objs)
+        return o ~= 0
+    end,
+    table = function(o, true_strs, check_objs)
+        if check_objs and next(o) ~= nil then
+            return true
+        end
+        return false
+    end
 }
 --- Convert to a boolean value.
 -- True values are:
@@ -178,6 +199,5 @@ function types.to_bool(o, true_strs, check_objs)
     end
     return false
 end
-
 
 return types

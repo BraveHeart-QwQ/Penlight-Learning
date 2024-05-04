@@ -7,21 +7,20 @@
 --
 -- Dependencies: `pl.utils`, `pl.tablex`, `pl.pretty`, `pl.path`, `debug`
 -- @module pl.test
-
 local tablex = require 'pl.tablex'
 local utils = require 'pl.utils'
 local pretty = require 'pl.pretty'
 local path = require 'pl.path'
-local type,unpack,pack = type,utils.unpack,utils.pack
+local type, unpack, pack = type, utils.unpack, utils.pack
 local clock = os.clock
 local debug = require 'debug'
 local io = io
 
 local function dump(x)
     if type(x) == 'table' and not (getmetatable(x) and getmetatable(x).__tostring) then
-        return pretty.write(x,' ',true)
+        return pretty.write(x, ' ', true)
     elseif type(x) == 'string' then
-        return '"'..x..'"'
+        return '"' .. x .. '"'
     else
         return tostring(x)
     end
@@ -32,17 +31,17 @@ local test = {}
 ---- error handling for test results.
 -- By default, this writes to stderr and exits the program.
 -- Re-define this function to raise an error and/or redirect output
-function test.error_handler(file,line,got_text, needed_text,msg)
+function test.error_handler(file, line, got_text, needed_text, msg)
     local err = io.stderr
-    err:write(path.basename(file)..':'..line..': assertion failed\n')
-    err:write("got:\t",got_text,'\n')
-    err:write("needed:\t",needed_text,'\n')
-    utils.quit(1,msg or "these values were not equal")
+    err:write(path.basename(file) .. ':' .. line .. ': assertion failed\n')
+    err:write("got:\t", got_text, '\n')
+    err:write("needed:\t", needed_text, '\n')
+    utils.quit(1, msg or "these values were not equal")
 end
 
-local function complain (x,y,msg,where)
+local function complain(x, y, msg, where)
     local i = debug.getinfo(3 + (where or 0))
-    test.error_handler(i.short_src,i.currentline,dump(x),dump(y),msg)
+    test.error_handler(i.short_src, i.currentline, dump(x), dump(y), msg)
 end
 
 --- general test complain message.
@@ -60,13 +59,13 @@ test.complain = complain
 -- @param y a value equal to x
 -- @param eps an optional tolerance for numerical comparisons
 -- @param where extra level offset
-function test.asserteq (x,y,eps,where)
+function test.asserteq(x, y, eps, where)
     local res = x == y
     if not res then
-        res = tablex.deepcompare(x,y,true,eps)
+        res = tablex.deepcompare(x, y, true, eps)
     end
     if not res then
-        complain(x,y,nil,where)
+        complain(x, y, nil, where)
     end
 end
 
@@ -74,9 +73,9 @@ end
 -- @param s1 a string
 -- @param s2 a string
 -- @param where extra level offset
-function test.assertmatch (s1,s2,where)
+function test.assertmatch(s1, s2, where)
     if not s1:match(s2) then
-        complain (s1,s2,"these strings did not match",where)
+        complain(s1, s2, "these strings did not match", where)
     end
 end
 
@@ -84,15 +83,15 @@ end
 -- @param fn a function or a table of the form {function,arg1,...}
 -- @param e a string to match the error against
 -- @param where extra level offset
-function test.assertraise(fn,e,where)
+function test.assertraise(fn, e, where)
     local ok, err
     if type(fn) == 'table' then
         ok, err = pcall(unpack(fn))
     else
         ok, err = pcall(fn)
     end
-    if ok or err:match(e)==nil then
-        complain (err,e,"these errors did not match",where)
+    if ok or err:match(e) == nil then
+        complain(err, e, "these errors did not match", where)
     end
 end
 
@@ -104,9 +103,13 @@ end
 -- @param y1 any value
 -- @param y2 any value
 -- @param where extra level offset
-function test.asserteq2 (x1,x2,y1,y2,where)
-    if x1 ~= y1 then complain(x1,y1,nil,where) end
-    if x2 ~= y2 then complain(x2,y2,nil,where) end
+function test.asserteq2(x1, x2, y1, y2, where)
+    if x1 ~= y1 then
+        complain(x1, y1, nil, where)
+    end
+    if x2 ~= y2 then
+        complain(x2, y2, nil, where)
+    end
 end
 
 -- tuple type --
@@ -118,7 +121,7 @@ tuple_mt.__index = tuple_mt
 
 function tuple_mt.__tostring(self)
     local ts = {}
-    for i=1, self.n do
+    for i = 1, self.n do
         local s = self[i]
         ts[i] = type(s) == 'string' and ('%q'):format(s) or tostring(s)
     end
@@ -126,9 +129,13 @@ function tuple_mt.__tostring(self)
 end
 
 function tuple_mt.__eq(a, b)
-    if a.n ~= b.n then return false end
-    for i=1, a.n do
-        if a[i] ~= b[i] then return false end
+    if a.n ~= b.n then
+        return false
+    end
+    for i = 1, a.n do
+        if a[i] ~= b[i] then
+            return false
+        end
     end
     return true
 end
@@ -155,10 +162,12 @@ end
 -- @int n number of times to call the function
 -- @func fun the function
 -- @param ... optional arguments to fun
-function test.timer(msg,n,fun,...)
+function test.timer(msg, n, fun, ...)
     local start = clock()
-    for i = 1,n do fun(...) end
-    utils.printf("%s: took %7.2f sec\n",msg,clock()-start)
+    for i = 1, n do
+        fun(...)
+    end
+    utils.printf("%s: took %7.2f sec\n", msg, clock() - start)
 end
 
 return test

@@ -12,12 +12,11 @@
 -- global environment strict - if you just want to explicitly set table strictness.
 --
 -- @module pl.strict
-
 require 'debug' -- for Lua 5.2
 local getinfo, error, rawset, rawget = debug.getinfo, error, rawset, rawget
 local strict = {}
 
-local function what ()
+local function what()
     local d = getinfo(3, "S")
     return d and d.what or "C"
 end
@@ -38,14 +37,16 @@ end
 -- M.Lua = "Rocks"
 -- assert(M.Lua == "Rocks")
 -- M.not_allowed = "bad boy"  -- throws an error
-function strict.module (name,mod,predeclared)
+function strict.module(name, mod, predeclared)
     local mt, old_newindex, old_index, old_index_type, global
     if predeclared then
         global = predeclared.__global
     end
     if type(mod) == 'table' then
         mt = getmetatable(mod)
-        if mt and rawget(mt,'__declared') then return end -- already patched...
+        if mt and rawget(mt, '__declared') then
+            return
+        end -- already patched...
     else
         mod = {}
     end
@@ -61,20 +62,22 @@ function strict.module (name,mod,predeclared)
     mt.__newindex = function(t, n, v)
         if old_newindex then
             old_newindex(t, n, v)
-            if rawget(t,n)~=nil then return end
+            if rawget(t, n) ~= nil then
+                return
+            end
         end
         if not mt.__declared[n] then
             if global then
                 local w = what()
                 if w ~= "main" and w ~= "C" then
-                    error("assign to undeclared global '"..n.."'", 2)
+                    error("assign to undeclared global '" .. n .. "'", 2)
                 end
             end
             mt.__declared[n] = true
         end
         rawset(t, n, v)
     end
-    mt.__index = function(t,n)
+    mt.__index = function(t, n)
         if not mt.__declared[n] and what() ~= "C" then
             if old_index then
                 if old_index_type == "table" then
@@ -89,9 +92,9 @@ function strict.module (name,mod,predeclared)
                     end
                 end
             end
-            local msg = "variable '"..n.."' is not declared"
+            local msg = "variable '" .. n .. "' is not declared"
             if name then
-                msg = msg .. " in '"..tostring(name).."'"
+                msg = msg .. " in '" .. tostring(name) .. "'"
             end
             error(msg, 2)
         end
@@ -104,10 +107,10 @@ end
 -- So `strict.make_all_strict(_G)` prevents monkey-patching
 -- of any global table
 -- @tab T the table containing the tables to protect. Table `T` itself will NOT be protected.
-function strict.make_all_strict (T)
-    for k,v in pairs(T) do
+function strict.make_all_strict(T)
+    for k, v in pairs(T) do
         if type(v) == 'table' and v ~= T then
-            strict.module(k,v)
+            strict.module(k, v)
         end
     end
 end
@@ -115,7 +118,7 @@ end
 --- make a new module table which is closed to further changes.
 -- @tab mod module table
 -- @string name module name
-function strict.closed_module (mod,name)
+function strict.closed_module(mod, name)
     -- No clue to what this is useful for? see tests
     -- Deprecate this and remove???
     local M = {}
@@ -123,16 +126,20 @@ function strict.closed_module (mod,name)
     local mt = getmetatable(mod)
     if not mt then
         mt = {}
-        setmetatable(mod,mt)
+        setmetatable(mod, mt)
     end
-    mt.__newindex = function(t,k,v)
+    mt.__newindex = function(t, k, v)
         M[k] = v
     end
-    return strict.module(name,M)
+    return strict.module(name, M)
 end
 
-if not rawget(_G,'PENLIGHT_NO_GLOBAL_STRICT') then
-    strict.module(nil,_G,{_PROMPT=true,_PROMPT2=true,__global=true})
+if not rawget(_G, 'PENLIGHT_NO_GLOBAL_STRICT') then
+    strict.module(nil, _G, {
+        _PROMPT = true,
+        _PROMPT2 = true,
+        __global = true
+    })
 end
 
 return strict

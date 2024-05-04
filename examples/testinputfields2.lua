@@ -5,5 +5,5 @@ local text = [[
     981125001	0.8	19104.0	9970.4	5088.7
     981127003	0.5	19012.5	9946.9	3831.2
 ]]
-local sum,count = seq.sum(input.fields ({3},' ',text))
-print(sum/count)
+local sum, count = seq.sum(input.fields({3}, ' ', text))
+print(sum / count)

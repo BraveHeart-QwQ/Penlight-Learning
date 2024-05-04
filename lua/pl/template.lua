@@ -27,7 +27,6 @@
 --
 -- Dependencies: `pl.utils`
 -- @module pl.template
-
 local utils = require 'pl.utils'
 
 local append, concat = table.insert, table.concat
@@ -76,9 +75,13 @@ local function parseHashLines(chunk, inline_escape, brackets, esc, newline)
             local ss
             ss, e, lua = strfind(chunk, esc_pat2, s)
             parseDollarParen(pieces, strsub(chunk, s, ss), exec_pat, newline)
-            if not e then break end
+            if not e then
+                break
+            end
         end
-        if strsub(lua, -1, -1) ~= "\n" then lua = lua .. "\n" end -- Ensure trailing newline
+        if strsub(lua, -1, -1) ~= "\n" then
+            lua = lua .. "\n"
+        end -- Ensure trailing newline
         append(pieces, lua)
         -- since `lua` ends with a newline, there is no danger of subsequent
         -- statements being gobbled up by comments or being altered
@@ -90,7 +93,7 @@ local function parseHashLines(chunk, inline_escape, brackets, esc, newline)
     -- just a single static string
     local short = false
     if (#pieces == 3) and (strfind(pieces[2], APPENDER, 1, true) == 1) then
-        pieces = { "return " .. strsub(pieces[2], #APPENDER + 1, -1) }
+        pieces = {"return " .. strsub(pieces[2], #APPENDER + 1, -1)}
         short = true
     end
     -- if short == true, the generated function will not return a table of strings,
@@ -128,7 +131,9 @@ function template.substitute(str, env)
         newline = false,
         debug = rawget(env, "_debug")
     })
-    if not t then return t, err end
+    if not t then
+        return t, err
+    end
 
     return t:render(env, rawget(env, "_parent"), rawget(env, "_debug"))
 end
@@ -150,14 +155,20 @@ end
 -- local rendered , err = ct:render(my_env, parent)
 local function render(self, env, parent, db)
     env = env or {}
-    if parent then  -- parent is a bit silly, but for backward compatibility retained
-        setmetatable(env, {__index = parent})
+    if parent then -- parent is a bit silly, but for backward compatibility retained
+        setmetatable(env, {
+            __index = parent
+        })
     end
-    setmetatable(self.env, {__index = env})
+    setmetatable(self.env, {
+        __index = env
+    })
 
     local res, out = xpcall(self.fn, debug.traceback)
     if not res then
-        if self.code and db then print(self.code) end
+        if self.code and db then
+            print(self.code)
+        end
         return nil, out, self.code
     end
     return concat(out), nil, self.code
@@ -192,9 +203,13 @@ function template.compile(str, opts)
     local inline_brackets = opts.inline_brackets or '()'
 
     local code, short = parseHashLines(str, inline_escape, inline_brackets, escape, opts.newline)
-    local env = { __tostring = tostring }
+    local env = {
+        __tostring = tostring
+    }
     local fn, err = utils.load(code, chunk_name, 't', env)
-    if not fn then return nil, err, code end
+    if not fn then
+        return nil, err, code
+    end
 
     if short then
         -- the template returns a single constant string, let's optimize for that
@@ -207,7 +222,7 @@ function template.compile(str, opts)
                 -- function above for this special case
                 return constant_string, nil, self.code
             end,
-            code = opts.debug and code or nil,
+            code = opts.debug and code or nil
         }
     end
 
@@ -215,7 +230,7 @@ function template.compile(str, opts)
         fn = fn(),
         env = env,
         render = render,
-        code = opts.debug and code or nil,
+        code = opts.debug and code or nil
     }
 end
 

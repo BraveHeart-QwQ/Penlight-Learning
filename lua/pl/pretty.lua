@@ -4,7 +4,6 @@
 --
 -- Dependencies: `pl.utils`, `pl.lexer`, `pl.stringx`, `debug`
 -- @module pl.pretty
-
 local append = table.insert
 local concat = table.concat
 local mfloor, mhuge = math.floor, math.huge
@@ -27,30 +26,30 @@ local original_tostring = tostring
 -- can throw runtime error
 local max_int, min_int
 local next_cand = 1
-while  next_cand > 0 and next_cand % 2 == 1 do
-  max_int = next_cand
-  min_int = -next_cand
-  next_cand = next_cand * 2 + 1
+while next_cand > 0 and next_cand % 2 == 1 do
+    max_int = next_cand
+    min_int = -next_cand
+    next_cand = next_cand * 2 + 1
 end
 
 local function is_integer(value)
-  if _VERSION == "Lua 5.3" or _VERSION == "Lua 5.4" then
-    return mtype(value) == "integer"
-  end
-  if value < min_int or value > max_int then
-    return false
-  end
-  return math.floor(value) == value
+    if _VERSION == "Lua 5.3" or _VERSION == "Lua 5.4" then
+        return mtype(value) == "integer"
+    end
+    if value < min_int or value > max_int then
+        return false
+    end
+    return math.floor(value) == value
 end
 
 local function is_float(value)
-  if _VERSION == "Lua 5.3" or _VERSION == "Lua 5.4" then
-    return mtype(value) == "float"
-  end
-  if value < min_int or value > max_int then
-    return true
-  end
-  return mfloor(value) == value
+    if _VERSION == "Lua 5.3" or _VERSION == "Lua 5.4" then
+        return mtype(value) == "float"
+    end
+    if value < min_int or value > max_int then
+        return true
+    end
+    return mfloor(value) == value
 end
 
 -- Patch tostring to format numbers with better precision
@@ -85,7 +84,7 @@ local function save_global_env()
     env.hook, env.mask, env.count = debug.gethook()
 
     -- env.hook is "external hook" if is a C hook function
-    if env.hook~="external hook" then
+    if env.hook ~= "external hook" then
         debug.sethook()
     end
 
@@ -97,7 +96,7 @@ end
 local function restore_global_env(env)
     if env then
         debug.setmetatable("", env.string_mt)
-        if env.hook~="external hook" then
+        if env.hook ~= "external hook" then
             debug.sethook(env.hook, env.mask, env.count)
         end
     end
@@ -114,28 +113,33 @@ end
 -- If loading the string failed, return `nil` and error message.
 -- If executing loaded string failed, return `nil` and the error it raised.
 function pretty.read(s)
-    assert_arg(1,s,'string')
+    assert_arg(1, s, 'string')
     if s:find '^%s*%-%-' then -- may start with a comment..
-        s = s:gsub('%-%-.-\n','')
+        s = s:gsub('%-%-.-\n', '')
     end
-    if not s:find '^%s*{' then return nil,"not a Lua table" end
+    if not s:find '^%s*{' then
+        return nil, "not a Lua table"
+    end
     if s:find '[^\'"%w_]function[^\'"%w_]' then
         local tok = lexer.lua(s)
-        for t,v in tok do
+        for t, v in tok do
             if t == 'keyword' and v == 'function' then
-                return nil,"cannot have functions in table definition"
+                return nil, "cannot have functions in table definition"
             end
         end
     end
-    s = 'return '..s
-    local chunk,err = utils.load(s,'tbl','t',{})
-    if not chunk then return nil,err end
+    s = 'return ' .. s
+    local chunk, err = utils.load(s, 'tbl', 't', {})
+    if not chunk then
+        return nil, err
+    end
     local global_env = save_global_env()
-    local ok,ret = pcall(chunk)
+    local ok, ret = pcall(chunk)
     restore_global_env(global_env)
-    if ok then return ret
+    if ok then
+        return ret
     else
-        return nil,ret
+        return nil, ret
     end
 end
 
@@ -146,60 +150,64 @@ end
 -- and disable string methods.
 -- @return the environment in case of success or `nil` and syntax or runtime error
 -- if something went wrong.
-function pretty.load (s, env, paranoid)
+function pretty.load(s, env, paranoid)
     env = env or {}
     if paranoid then
         local tok = lexer.lua(s)
-        for t,v in tok do
-            if t == 'keyword'
-                and (v == 'for' or v == 'repeat' or v == 'function' or v == 'goto')
-            then
-                return nil,"looping not allowed"
+        for t, v in tok do
+            if t == 'keyword' and (v == 'for' or v == 'repeat' or v == 'function' or v == 'goto') then
+                return nil, "looping not allowed"
             end
         end
     end
-    local chunk,err = utils.load(s,'tbl','t',env)
-    if not chunk then return nil,err end
+    local chunk, err = utils.load(s, 'tbl', 't', env)
+    if not chunk then
+        return nil, err
+    end
     local global_env = paranoid and save_global_env()
-    local ok,err = pcall(chunk)
+    local ok, err = pcall(chunk)
     restore_global_env(global_env)
-    if not ok then return nil,err end
+    if not ok then
+        return nil, err
+    end
     return env
 end
 
-local function quote_if_necessary (v)
-    if not v then return ''
+local function quote_if_necessary(v)
+    if not v then
+        return ''
     else
-        --AAS
-        if v:find ' ' then v = quote_string(v) end
+        -- AAS
+        if v:find ' ' then
+            v = quote_string(v)
+        end
     end
     return v
 end
 
 local keywords
 
-local function is_identifier (s)
+local function is_identifier(s)
     return type(s) == 'string' and s:find('^[%a_][%w_]*$') and not keywords[s]
 end
 
-local function quote (s)
+local function quote(s)
     if type(s) == 'table' then
-        return pretty.write(s,'')
+        return pretty.write(s, '')
     else
-        --AAS
-        return quote_string(s)-- ('%q'):format(tostring(s))
+        -- AAS
+        return quote_string(s) -- ('%q'):format(tostring(s))
     end
 end
 
-local function index (numkey,key)
-    --AAS
+local function index(numkey, key)
+    -- AAS
     if not numkey then
         key = quote(key)
-         key = key:find("^%[") and (" " .. key .. " ") or key
+        key = key:find("^%[") and (" " .. key .. " ") or key
     end
-    return '['..key..']'
+    return '[' .. key .. ']'
 end
-
 
 --- Create a string representation of a Lua table.
 -- This function never fails, but may complain by returning an
@@ -219,130 +227,140 @@ end
 -- Defaults to `false`.
 -- @return a string
 -- @return an optional error message
-function pretty.write (tbl,space,not_clever)
+function pretty.write(tbl, space, not_clever)
     if type(tbl) ~= 'table' then
         local res = tostring(tbl)
-        if type(tbl) == 'string' then return quote(tbl) end
+        if type(tbl) == 'string' then
+            return quote(tbl)
+        end
         return res, 'not a table'
     end
     if not keywords then
         keywords = lexer.get_keywords()
     end
     local set = ' = '
-    if space == '' then set = '=' end
+    if space == '' then
+        set = '='
+    end
     space = space or '  '
     local lines = {}
     local line = ''
     local tables = {}
 
-
     local function put(s)
         if #s > 0 then
-            line = line..s
+            line = line .. s
         end
     end
 
-    local function putln (s)
+    local function putln(s)
         if #line > 0 then
-            line = line..s
-            append(lines,line)
+            line = line .. s
+            append(lines, line)
             line = ''
         else
-            append(lines,s)
+            append(lines, s)
         end
     end
 
-    local function eat_last_comma ()
+    local function eat_last_comma()
         local n = #lines
-        local lastch = lines[n]:sub(-1,-1)
+        local lastch = lines[n]:sub(-1, -1)
         if lastch == ',' then
-            lines[n] = lines[n]:sub(1,-2)
+            lines[n] = lines[n]:sub(1, -2)
         end
     end
-
 
     -- safe versions for iterators since 5.3+ honors metamethods that can throw
     -- errors
     local ipairs = function(t)
         local i = 0
         local ok, v
-        local getter = function() return t[i] end
+        local getter = function()
+            return t[i]
+        end
         return function()
-                i = i + 1
-                ok, v = pcall(getter)
-                if v == nil or not ok then return end
-                return i, t[i]
+            i = i + 1
+            ok, v = pcall(getter)
+            if v == nil or not ok then
+                return
             end
+            return i, t[i]
+        end
     end
     local pairs = function(t)
         local k, v, ok
-        local getter = function() return next(t, k) end
+        local getter = function()
+            return next(t, k)
+        end
         return function()
-                ok, k, v = pcall(getter)
-                if not ok then return end
-                return k, v
+            ok, k, v = pcall(getter)
+            if not ok then
+                return
             end
+            return k, v
+        end
     end
 
     local writeit
-    writeit = function (t,oldindent,indent)
+    writeit = function(t, oldindent, indent)
         local tp = type(t)
-        if tp ~= 'string' and  tp ~= 'table' then
-            putln(quote_if_necessary(tostring(t))..',')
+        if tp ~= 'string' and tp ~= 'table' then
+            putln(quote_if_necessary(tostring(t)) .. ',')
         elseif tp == 'string' then
             -- if t:find('\n') then
             --     putln('[[\n'..t..']],')
             -- else
             --     putln(quote(t)..',')
             -- end
-            --AAS
-            putln(quote_string(t) ..",")
+            -- AAS
+            putln(quote_string(t) .. ",")
         elseif tp == 'table' then
             if tables[t] then
                 putln('<cycle>,')
                 return
             end
             tables[t] = true
-            local newindent = indent..space
+            local newindent = indent .. space
             putln('{')
             local used = {}
             if not not_clever then
-                for i,val in ipairs(t) do
+                for i, val in ipairs(t) do
                     put(indent)
-                    writeit(val,indent,newindent)
+                    writeit(val, indent, newindent)
                     used[i] = true
                 end
             end
             local ordered_keys = {}
-            for k,v in pairs(t) do
-               if type(k) ~= 'number' then
-                  ordered_keys[#ordered_keys + 1] = k
-               end
+            for k, v in pairs(t) do
+                if type(k) ~= 'number' then
+                    ordered_keys[#ordered_keys + 1] = k
+                end
             end
-            table.sort(ordered_keys, function (a, b)
+            table.sort(ordered_keys, function(a, b)
                 if type(a) == type(b) then
                     return tostring(a) < tostring(b)
                 else
                     return type(a) < type(b)
                 end
             end)
-            local function write_entry (key, val)
+            local function write_entry(key, val)
                 local tkey = type(key)
                 local numkey = tkey == 'number'
                 if not_clever then
                     key = tostring(key)
-                    put(indent..index(numkey,key)..set)
-                    writeit(val,indent,newindent)
+                    put(indent .. index(numkey, key) .. set)
+                    writeit(val, indent, newindent)
                 else
                     if not numkey or not used[key] then -- non-array indices
                         if tkey ~= 'string' then
                             key = tostring(key)
                         end
                         if numkey or not is_identifier(key) then
-                            key = index(numkey,key)
+                            key = index(numkey, key)
                         end
-                        put(indent..key..set)
-                        writeit(val,indent,newindent)
+                        put(indent .. key .. set)
+                        writeit(val, indent, newindent)
                     end
                 end
             end
@@ -351,28 +369,28 @@ function pretty.write (tbl,space,not_clever)
                 local val = t[key]
                 write_entry(key, val)
             end
-            for key,val in pairs(t) do
-               if type(key) == 'number' then
-                  write_entry(key, val)
-               end
+            for key, val in pairs(t) do
+                if type(key) == 'number' then
+                    write_entry(key, val)
+                end
             end
             tables[t] = nil
             eat_last_comma()
-            putln(oldindent..'},')
+            putln(oldindent .. '},')
         else
-            putln(tostring(t)..',')
+            putln(tostring(t) .. ',')
         end
     end
-    writeit(tbl,'',space)
+    writeit(tbl, '', space)
     eat_last_comma()
-    return concat(lines,#space > 0 and '\n' or '')
+    return concat(lines, #space > 0 and '\n' or '')
 end
 
 --- Dump a Lua table out to a file or stdout.
 -- @tab t The table to write to a file or stdout.
 -- @string[opt] filename File name to write too. Defaults to writing
 -- to stdout.
-function pretty.dump (t, filename)
+function pretty.dump(t, filename)
     if not filename then
         print(pretty.write(t))
         return true
@@ -409,7 +427,7 @@ end
 -- }
 function pretty.debug(...)
     local n = select("#", ...)
-    local t = { ... }
+    local t = {...}
     for i = 1, n do
         local value = t[i]
         if value == nil then
@@ -423,13 +441,15 @@ function pretty.debug(...)
     return true
 end
 
+local memp, nump = {'B', 'KiB', 'MiB', 'GiB'}, {'', 'K', 'M', 'B'}
 
-local memp,nump = {'B','KiB','MiB','GiB'},{'','K','M','B'}
-
-local function comma (val)
-    local thou = math.floor(val/1000)
-    if thou > 0 then return comma(thou)..','.. tostring(val % 1000)
-    else return tostring(val) end
+local function comma(val)
+    local thou = math.floor(val / 1000)
+    if thou > 0 then
+        return comma(thou) .. ',' .. tostring(val % 1000)
+    else
+        return tostring(val)
+    end
 end
 
 --- Format large numbers nicely for human consumption.
@@ -438,8 +458,8 @@ end
 -- `'N'` (postfixes are `'K'`, `'M'` and `'B'`),
 -- or `'T'` (use commas as thousands separator), `'N'` by default.
 -- @int[opt] prec number of digits to use for `'M'` and `'N'`, `1` by default.
-function pretty.number (num,kind,prec)
-    local fmt = '%.'..(prec or 1)..'f%s'
+function pretty.number(num, kind, prec)
+    local fmt = '%.' .. (prec or 1) .. 'f%s'
     if kind == 'T' then
         return comma(num)
     else
@@ -458,11 +478,14 @@ function pretty.number (num,kind,prec)
             k = k + 1
         end
         div = div / fact
-        if k > #postfixes then k = k - 1; div = div/fact end
+        if k > #postfixes then
+            k = k - 1;
+            div = div / fact
+        end
         if k > 1 then
-            return fmt:format(num/div,postfixes[k] or 'duh')
+            return fmt:format(num / div, postfixes[k] or 'duh')
         else
-            return num..postfixes[1]
+            return num .. postfixes[1]
         end
     end
 end

@@ -1,27 +1,26 @@
 local stringio = require 'pl.stringio'
 local config = require 'pl.config'
 
-local function dump(t,indent)
+local function dump(t, indent)
     if type(t) == 'table' then
-        io.write(indent,'{\n')
-        local newindent = indent..'  '
-        for k,v in pairs(t) do
-            io.write(newindent,k,'=')
-            dump(v,indent)
+        io.write(indent, '{\n')
+        local newindent = indent .. '  '
+        for k, v in pairs(t) do
+            io.write(newindent, k, '=')
+            dump(v, indent)
             io.write('\n')
         end
-        io.write(newindent,'},\n')
+        io.write(newindent, '},\n')
     else
-        io.write(indent,t,'(',type(t),')')
+        io.write(indent, t, '(', type(t), ')')
     end
 end
-
 
 local function testconfig(test)
     local f = stringio.open(test)
     local c = config.read(f)
     f:close()
-    dump(c,'  ')
+    dump(c, '  ')
     print '-----'
 end
 
@@ -47,5 +46,4 @@ testconfig [[
 1000,444,222
 44,555,224
 ]]
-
 

@@ -4,7 +4,6 @@
 -- unique identifiers with their usage count.
 -- (an example of a program which itself needs to be careful about what
 -- goes into the global namespace)
-
 local utils = require 'pl.utils'
 local file = require 'pl.file'
 local lexer = require 'pl.lexer'
@@ -17,12 +16,11 @@ utils.on_error 'quit'
 
 local txt = file.read(arg[1] or path.normpath('examples/testglobal.lua'))
 local globals = List()
-for t,v in lexer.lua(txt) do
-	if t == 'iden' and rawget(_G,v) then
-		globals:append(v)
-	end
+for t, v in lexer.lua(txt) do
+    if t == 'iden' and rawget(_G, v) then
+        globals:append(v)
+    end
 end
 
 pretty.dump(seq.count_map(globals))
-
 

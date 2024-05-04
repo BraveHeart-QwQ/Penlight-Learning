@@ -2,7 +2,6 @@
 -- can be parsed. It also prints out the actual Lua string
 -- pattern generated:
 -- SYNC%s*%[([+%-%d]%d*)%]%s*([+%-%d]%d*)%s*([+%-%d]%d*)
-
 local sip = require 'pl.sip'
 local stringx = require 'pl.stringx'
 
@@ -15,7 +14,6 @@ SYNC [5] -1 580 (14679 sec)
 SYNC [6] 0 587 (14679 sec)
 ]]
 
-
 local first = true
 local expected
 local res = {}
@@ -23,12 +21,12 @@ local pat = 'SYNC [$i{seq}] $i{diff} $i{val}'
 print(sip.create_pattern(pat))
 local match = sip.compile(pat)
 for line in stringx.lines(s) do
-  if match(line,res) then
-    if first then
-      expected = res.val
-      first = false
+    if match(line, res) then
+        if first then
+            expected = res.val
+            first = false
+        end
+        print(res.val, expected - res.val)
+        expected = expected + 8
     end
-    print(res.val,expected - res.val)
-    expected = expected + 8
-  end
 end

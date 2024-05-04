@@ -1,7 +1,6 @@
 --- Python-style URL quoting library.
 --
 -- @module pl.url
-
 local url = {}
 
 local function quote_char(c)

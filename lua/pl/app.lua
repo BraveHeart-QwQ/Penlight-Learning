@@ -3,8 +3,7 @@
 --
 -- Dependencies: `pl.utils`, `pl.path`
 -- @module pl.app
-
-local io,package,require = _G.io, _G.package, _G.require
+local io, package, require = _G.io, _G.package, _G.require
 local utils = require 'pl.utils'
 local path = require 'pl.path'
 
@@ -31,40 +30,40 @@ end
 -- @string base optional base directory (absolute, or relative path).
 -- @bool nofollow always use the invocation's directory, even if the invoked file is a symlink
 -- @treturn string the current script's path with a trailing slash
-function app.require_here (base, nofollow)
+function app.require_here(base, nofollow)
     local p = app.script_name()
     if not path.isabs(p) then
-        p = path.join(path.currentdir(),p)
+        p = path.join(path.currentdir(), p)
     end
     if not nofollow then
-      local t = path.link_attrib(p)
-      if t and t.mode == 'link' then
-        t = t.target
-        if not path.isabs(t) then
-          t = path.join(path.dirname(p), t)
+        local t = path.link_attrib(p)
+        if t and t.mode == 'link' then
+            t = t.target
+            if not path.isabs(t) then
+                t = path.join(path.dirname(p), t)
+            end
+            p = t
         end
-        p = t
-      end
     end
     p = path.normpath(path.dirname(p))
-    if p:sub(-1,-1) ~= path.sep then
-        p = p..path.sep
+    if p:sub(-1, -1) ~= path.sep then
+        p = p .. path.sep
     end
     if base then
         if path.is_windows then
-            base = base:gsub('/','\\')
+            base = base:gsub('/', '\\')
         end
         if path.isabs(base) then
             p = base .. path.sep
         else
-            p = p..base..path.sep
+            p = p .. base .. path.sep
         end
     end
     local so_ext = path.is_windows and 'dll' or 'so'
     local lsep = package.path:find '^;' and '' or ';'
     local csep = package.cpath:find '^;' and '' or ';'
-    package.path = ('%s?.lua;%s?%sinit.lua%s%s'):format(p,p,path.sep,lsep,package.path)
-    package.cpath = ('%s?.%s%s%s'):format(p,so_ext,csep,package.cpath)
+    package.path = ('%s?.lua;%s?%sinit.lua%s%s'):format(p, p, path.sep, lsep, package.path)
+    package.cpath = ('%s?.%s%s%s'):format(p, so_ext, csep, package.cpath)
     return p
 end
 
@@ -82,15 +81,19 @@ end
 -- -- C:\Documents and Settings\steve\.testapp\test.txt
 function app.appfile(file)
     local sfullname, err = app.script_name()
-    if not sfullname then return utils.raise(err) end
+    if not sfullname then
+        return utils.raise(err)
+    end
     local sname = path.basename(sfullname)
     local name = path.splitext(sname)
-    local dir = path.join(path.expanduser('~'),'.'..name)
+    local dir = path.join(path.expanduser('~'), '.' .. name)
     if not path.isdir(dir) then
         local ret = path.mkdir(dir)
-        if not ret then return utils.raise('cannot create '..dir) end
+        if not ret then
+            return utils.raise('cannot create ' .. dir)
+        end
     end
-    return path.join(dir,file)
+    return path.join(dir, file)
 end
 
 --- return string indicating operating system.
@@ -101,7 +104,9 @@ function app.platform()
     else
         local f = io.popen('uname')
         local res = f:read()
-        if res == 'Darwin' then res = 'OSX' end
+        if res == 'Darwin' then
+            res = 'OSX'
+        end
         f:close()
         return res
     end
@@ -126,7 +131,7 @@ function app.lua()
     local i = -1
     while true do
         table.insert(cmd, 1, args[i])
-        if not args[i-1] then
+        if not args[i - 1] then
             return utils.quote_arg(cmd), args[i]
         end
         i = i - 1
@@ -185,14 +190,16 @@ end
 --     [1] = "param1"
 --     [2] = "param2"
 -- }
-function app.parse_args (args,flags_with_values, flags_valid)
+function app.parse_args(args, flags_with_values, flags_valid)
     if not args then
         args = _G.arg
-        if not args then utils.raise "Not in a main program: 'arg' not found" end
+        if not args then
+            utils.raise "Not in a main program: 'arg' not found"
+        end
     end
 
     local with_values = {}
-    for k,v in pairs(flags_with_values or {}) do
+    for k, v in pairs(flags_with_values or {}) do
         if type(k) == "number" then
             k = v
         end
@@ -203,17 +210,21 @@ function app.parse_args (args,flags_with_values, flags_valid)
     if not flags_valid then
         -- if no allowed flags provided, we create a table that always returns
         -- the keyname, no matter what you look up
-        valid = setmetatable({},{ __index = function(_, key) return key end })
+        valid = setmetatable({}, {
+            __index = function(_, key)
+                return key
+            end
+        })
     else
         valid = {}
-        for k,aliases in pairs(flags_valid) do
-            if type(k) == "number" then         -- array/list entry
+        for k, aliases in pairs(flags_valid) do
+            if type(k) == "number" then -- array/list entry
                 k = aliases
             end
-            if type(aliases) == "string" then  -- single alias
-                aliases = { aliases }
+            if type(aliases) == "string" then -- single alias
+                aliases = {aliases}
             end
-            if type(aliases) == "table" then   -- list of aliases
+            if type(aliases) == "table" then -- list of aliases
                 -- it's the alternate name, so add the proper mappings
                 for i, alias in ipairs(aliases) do
                     valid[alias] = k
@@ -222,13 +233,13 @@ function app.parse_args (args,flags_with_values, flags_valid)
             valid[k] = k
         end
         do
-            local new_with_values = {}  -- needed to prevent "invalid key to 'next'" error
-            for k,v in pairs(with_values) do
+            local new_with_values = {} -- needed to prevent "invalid key to 'next'" error
+            for k, v in pairs(with_values) do
                 if not valid[k] then
-                    valid[k] = k   -- add the with_value entry as a valid one
+                    valid[k] = k -- add the with_value entry as a valid one
                     new_with_values[k] = true
                 else
-                    new_with_values[valid[k]] = true  --set, but by its alias
+                    new_with_values[valid[k]] = true -- set, but by its alias
                 end
             end
             with_values = new_with_values
@@ -252,7 +263,7 @@ function app.parse_args (args,flags_with_values, flags_valid)
         local is_long
         if not v then
             -- we have a parameter
-            _args[#_args+1] = a
+            _args[#_args + 1] = a
         else
             -- it's a flag
             if v:find '^-' then
@@ -260,26 +271,26 @@ function app.parse_args (args,flags_with_values, flags_valid)
                 v = v:sub(2)
             end
             if with_values[v] then
-                if i == #args or args[i+1]:find '^-' then
-                    return utils.raise ("no value for '"..v.."'")
+                if i == #args or args[i + 1]:find '^-' then
+                    return utils.raise("no value for '" .. v .. "'")
                 end
-                flags[valid[v]] = args[i+1]
+                flags[valid[v]] = args[i + 1]
                 i = i + 1
             else
                 -- a value can also be indicated with = or :
-                local var,val =  utils.splitv (v,'[=:]', false, 2)
+                local var, val = utils.splitv(v, '[=:]', false, 2)
                 var = var or v
                 val = val or true
                 if not is_long then
                     if #var > 1 then
                         if var:find '.%d+' then -- short flag, number value
                             val = var:sub(2)
-                            var = var:sub(1,1)
+                            var = var:sub(1, 1)
                         else -- multiple short flags
-                            for i = 1,#var do
-                                local f = var:sub(i,i)
+                            for i = 1, #var do
+                                local f = var:sub(i, i)
                                 if not valid[f] then
-                                    return utils.raise("unknown flag '"..f.."'")
+                                    return utils.raise("unknown flag '" .. f .. "'")
                                 else
                                     f = valid[f]
                                 end
@@ -287,13 +298,13 @@ function app.parse_args (args,flags_with_values, flags_valid)
                             end
                             val = nil -- prevents use of var as a flag below
                         end
-                    else  -- single short flag (can have value, defaults to true)
+                    else -- single short flag (can have value, defaults to true)
                         val = val or true
                     end
                 end
                 if val then
                     if not valid[var] then
-                        return utils.raise("unknown flag '"..var.."'")
+                        return utils.raise("unknown flag '" .. var .. "'")
                     else
                         var = valid[var]
                     end
@@ -303,7 +314,7 @@ function app.parse_args (args,flags_with_values, flags_valid)
         end
         i = i + 1
     end
-    return flags,_args
+    return flags, _args
 end
 
 return app

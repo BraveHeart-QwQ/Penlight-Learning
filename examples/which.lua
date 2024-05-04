@@ -5,26 +5,33 @@ local List = require 'pl.List'
 local path = require 'pl.path'
 local app = require 'pl.app'
 
-local pathl = List.split(os.getenv 'PATH',path.dirsep)
+local pathl = List.split(os.getenv 'PATH', path.dirsep)
 
-local function which (file)
-    local res = pathl:map(path.join,file)
+local function which(file)
+    local res = pathl:map(path.join, file)
     res = res:filter(path.exists)
-    if res then return res[1] end
+    if res then
+        return res[1]
+    end
 end
 
-local _,lua = app.lua()
+local _, lua = app.lua()
 local file = arg[1] or lua -- i.e. location of lua executable
 local try
 
-if not file then return print 'must provide a filename' end
+if not file then
+    return print 'must provide a filename'
+end
 
 if path.extension(file) == '' and path.is_windows then
-    try = which(file..'.exe')
+    try = which(file .. '.exe')
 else
     try = which(file)
 end
 
-if try then print(try) else print 'cannot find on path' end
-
+if try then
+    print(try)
+else
+    print 'cannot find on path'
+end
 
